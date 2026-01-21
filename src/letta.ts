@@ -45,12 +45,47 @@ export function parseTemplateMemory(env: Env): Record<string, string> | undefine
 }
 
 export async function createAgentFromTemplate(env: Env, meta: TelegramMeta): Promise<string> {
-  const client = createLettaClient(env);
-  const response = await client.templates.agents.create(env.LETTA_TEMPLATE_VERSION, {
-    memory_variables: parseTemplateMemory(env)
+  const templateVersion = env.LETTA_TEMPLATE_VERSION;
+
+  // Determine base URL
+  let baseURL: string;
+  if (env.LETTA_BASE_URL) {
+    baseURL = env.LETTA_BASE_URL.replace(/\/$/, ""); // Remove trailing slash
+  } else if (env.LETTA_PROJECT) {
+    baseURL = "https://api.letta.com";
+  } else {
+    throw new Error("Either LETTA_BASE_URL or LETTA_PROJECT must be set");
+  }
+
+  // Construct API endpoint using the full template version string
+  // Split on '/' to preserve it as a path separator, encode each segment
+  const pathSegments = templateVersion.split("/").map(segment => encodeURIComponent(segment));
+  const url = `${baseURL}/v1/templates/${pathSegments.join("/")}/agents`;
+
+  // Prepare request body
+  const body: { memory_variables?: Record<string, string> } = {};
+  const memoryVariables = parseTemplateMemory(env);
+  if (memoryVariables) {
+    body.memory_variables = memoryVariables;
+  }
+
+  // Make HTTP request
+  const response = await fetch(url, {
+    method: "POST",
+    headers: {
+      "Authorization": `Bearer ${env.LETTA_API_KEY}`,
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify(body)
   });
 
-  const agentId = response.agent_ids?.[0];
+  if (!response.ok) {
+    const errorText = await response.text().catch(() => "");
+    throw new Error(`Letta API request failed: ${response.status} ${response.statusText}${errorText ? ` - ${errorText}` : ""}`);
+  }
+
+  const data = await response.json() as { agent_ids?: string[] };
+  const agentId = data.agent_ids?.[0];
   if (!agentId) {
     throw new Error("Letta template response did not include agent_ids");
   }

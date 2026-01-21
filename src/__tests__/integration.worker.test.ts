@@ -177,7 +177,7 @@ describe("worker integration", () => {
           TELEGRAM_WEBHOOK_PATH: webhookPath,
           LETTA_API_KEY: "test-key",
           LETTA_BASE_URL: `http://127.0.0.1:${mock.port}`,
-          LETTA_TEMPLATE_VERSION: "template:1"
+          LETTA_TEMPLATE_VERSION: "testproject/testtemplate:1"
         }
       });
 

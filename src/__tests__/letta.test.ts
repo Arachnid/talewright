@@ -24,7 +24,7 @@ describe("sendMessageToAgent", () => {
       agents: {
         messages: {
           create: async () => ({
-            messages: [{ role: "assistant", content: "Hello there" }]
+            messages: [{ message_type: "assistant_message", role: "assistant", content: "Hello there" }]
           })
         }
       }
@@ -40,7 +40,7 @@ describe("sendMessageToAgent", () => {
         messages: {
           create: async () => ({
             messages: [
-              { role: "assistant", content: [{ text: "Hello" }, { text: " world" }] }
+              { message_type: "assistant_message", role: "assistant", content: [{ text: "Hello" }, { text: " world" }] }
             ]
           })
         }
