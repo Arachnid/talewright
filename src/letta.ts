@@ -92,6 +92,34 @@ export async function createAgentFromTemplate(env: Env, meta: TelegramMeta): Pro
   return agentId;
 }
 
+export async function deleteAgent(env: Env, agentId: string): Promise<void> {
+  // Determine base URL
+  let baseURL: string;
+  if (env.LETTA_BASE_URL) {
+    baseURL = env.LETTA_BASE_URL.replace(/\/$/, ""); // Remove trailing slash
+  } else if (env.LETTA_PROJECT) {
+    baseURL = "https://api.letta.com";
+  } else {
+    throw new Error("Either LETTA_BASE_URL or LETTA_PROJECT must be set");
+  }
+
+  const url = `${baseURL}/v1/agents/${encodeURIComponent(agentId)}`;
+
+  // Make HTTP request
+  const response = await fetch(url, {
+    method: "DELETE",
+    headers: {
+      "Authorization": `Bearer ${env.LETTA_API_KEY}`,
+      "Content-Type": "application/json"
+    }
+  });
+
+  if (!response.ok) {
+    const errorText = await response.text().catch(() => "");
+    throw new Error(`Letta API delete request failed: ${response.status} ${response.statusText}${errorText ? ` - ${errorText}` : ""}`);
+  }
+}
+
 export async function sendMessageToAgent(
   client: Letta,
   agentId: string,
@@ -114,10 +142,10 @@ export async function sendMessageToAgent(
       } else if (Array.isArray(content)) {
         for (const part of content) {
           if (typeof part === "string") {
-            if (part.trim()) {
-              await onPart(part);
+            if ((part as string).trim()) {
+              await onPart(part as string);
             }
-          } else if (typeof part === "object" && part && "text" in part) {
+          } else if (part && typeof part === "object" && "text" in part) {
             const textValue = (part as { text?: string }).text;
             if (textValue != null) {
               const textPart = String(textValue);

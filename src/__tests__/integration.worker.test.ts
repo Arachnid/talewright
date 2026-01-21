@@ -36,6 +36,13 @@ function startMockServer() {
       return;
     }
 
+    if (req.method === "DELETE" && url.pathname.startsWith("/v1/agents/")) {
+      // Handle agent deletion
+      res.writeHead(200, { "Content-Type": "application/json" });
+      res.end(JSON.stringify({ success: true }));
+      return;
+    }
+
     if (req.method === "POST" && url.pathname.startsWith("/v1/agents/") && url.pathname.endsWith("/messages")) {
       state.messageCalls += 1;
       const parsedBody = body ? JSON.parse(body) : {};

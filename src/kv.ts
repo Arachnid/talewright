@@ -1,4 +1,5 @@
 import type { ChatAgentRecord, Env } from "./types";
+import { deleteAgent } from "./letta";
 
 const KV_PREFIX = "chat:";
 
@@ -34,5 +35,24 @@ export async function deleteChatAgent(
   env: Env,
   chatId: string
 ): Promise<void> {
+  // Get the agent record to find the agent ID
+  const record = await getChatAgent(env, chatId);
+  
+  // Delete the agent from Letta API if it exists
+  if (record?.agentId) {
+    try {
+      await deleteAgent(env, record.agentId);
+    } catch (error) {
+      // Log error but continue to delete from KV
+      // The agent might already be deleted or the API call might fail
+      console.error("Failed to delete agent from Letta API", {
+        error,
+        agentId: record.agentId,
+        chatId
+      });
+    }
+  }
+  
+  // Delete the KV record
   await env.CHAT_AGENT_KV.delete(chatKey(chatId));
 }
