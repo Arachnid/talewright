@@ -40,7 +40,7 @@ export class TelegramWorkflow extends WorkflowEntrypoint<Env, TelegramWorkflowIn
 
 async function sendTelegramMessage(bot: Bot, chatId: string, text: string): Promise<void> {
   try {
-    await bot.api.sendMessage(chatId, text);
+    await bot.api.sendMessage(chatId, text, {parse_mode: "MarkdownV2"});
   } catch (error) {
     console.error("Failed to send Telegram message", {
       error,
