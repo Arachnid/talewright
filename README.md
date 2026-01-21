@@ -37,12 +37,10 @@ Set these as Worker vars or secrets:
    - or `ngrok http 8787`
 4. Set the Telegram webhook:
    ```bash
-   curl -X POST "https://api.telegram.org/bot$TELEGRAM_BOT_TOKEN/setWebhook" \
-     -H "Content-Type: application/json" \
-     -d '{
-       "url": "https://YOUR_TUNNEL/telegram/webhook",
-       "secret_token": "YOUR_WEBHOOK_SECRET"
-     }'
+   TELEGRAM_WEBHOOK_URL="https://YOUR_TUNNEL/telegram/webhook" \
+   TELEGRAM_WEBHOOK_SECRET="YOUR_WEBHOOK_SECRET" \
+   TELEGRAM_BOT_TOKEN="YOUR_TOKEN" \
+   npm run set:webhook
    ```
 
 ## Tests

@@ -8,7 +8,8 @@
     "deploy": "wrangler deploy",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
-    "test:integration": "vitest run src/__tests__/integration.worker.test.ts"
+    "test:integration": "vitest run src/__tests__/integration.worker.test.ts",
+    "set:webhook": "node scripts/set-webhook.mjs"
   },
   "dependencies": {
     "@letta-ai/letta-client": "^1.7.2",
