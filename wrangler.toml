@@ -3,10 +3,10 @@ main = "src/index.ts"
 compatibility_date = "2025-01-29"
 
 kv_namespaces = [
-  { binding = "CHAT_AGENT_KV", id = "REPLACE_WITH_KV_NAMESPACE_ID" }
+  { binding = "CHAT_AGENT_KV", id = "telegram_agents" }
 ]
 
 [vars]
 LETTA_BASE_URL = "https://app.letta.com/v1"
 TELEGRAM_WEBHOOK_PATH = "/telegram/webhook"
-LETTA_TEMPLATE_VERSION = "your_template:version"
+LETTA_TEMPLATE_VERSION = "talewright:latest"
