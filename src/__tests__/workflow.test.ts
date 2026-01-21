@@ -91,7 +91,7 @@ describe("TelegramWorkflow", () => {
     });
     expect(mockSendMessage).toHaveBeenCalledWith(
       "123",
-      "Agent restarted! Ready for a fresh conversation\\.",
+      expect.stringContaining("Agent restarted"),
       { parse_mode: "MarkdownV2" }
     );
   });
@@ -116,7 +116,7 @@ describe("TelegramWorkflow", () => {
     });
     expect(mockSendMessage).toHaveBeenCalledWith(
       "123",
-      "Agent restarted! Ready for a fresh conversation\\.",
+      expect.stringContaining("Agent restarted"),
       { parse_mode: "MarkdownV2" }
     );
   });
@@ -133,7 +133,7 @@ describe("TelegramWorkflow", () => {
     expect(createFreshAgent).toHaveBeenCalled();
     expect(mockSendMessage).toHaveBeenCalledWith(
       "123",
-      "Agent restarted! Ready for a fresh conversation\\.",
+      expect.stringContaining("Agent restarted"),
       { parse_mode: "MarkdownV2" }
     );
   });

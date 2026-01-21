@@ -1,5 +1,6 @@
 import { WorkflowEntrypoint, WorkflowEvent, WorkflowStep } from "cloudflare:workers";
 import { Bot } from "grammy";
+import { sanitizeMarkdown } from "./markdown-sanitizer";
 import type { Env, TelegramWorkflowInput, TelegramMeta } from "./types";
 import { createFreshAgent, forwardMessageToLetta } from "./agent";
 
@@ -32,11 +33,11 @@ export class TelegramWorkflow extends WorkflowEntrypoint<Env, TelegramWorkflowIn
         await step.do("create-fresh-agent", async () => {
           await createFreshAgent(this.env, meta);
         });
-        await sendTelegramMessage(bot, chatId, "Agent restarted! Ready for a fresh conversation\\.");
+        await sendTelegramMessage(bot, chatId, "Agent restarted! Ready for a fresh conversation.");
         return;
       } catch (error) {
         console.error("Error creating fresh agent", error);
-        await sendTelegramMessage(bot, chatId, "Sorry, something went wrong while restarting the agent\\.");
+        await sendTelegramMessage(bot, chatId, "Sorry, something went wrong while restarting the agent.");
         return;
       }
     }
@@ -56,7 +57,8 @@ export class TelegramWorkflow extends WorkflowEntrypoint<Env, TelegramWorkflowIn
 
 async function sendTelegramMessage(bot: Bot, chatId: string, text: string): Promise<void> {
   try {
-    await bot.api.sendMessage(chatId, text, {parse_mode: "MarkdownV2"});
+    const sanitized = sanitizeMarkdown(text);
+    await bot.api.sendMessage(chatId, sanitized, {parse_mode: "MarkdownV2"});
   } catch (error) {
     console.error("Failed to send Telegram message", {
       error,
