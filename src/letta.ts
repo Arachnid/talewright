@@ -101,7 +101,7 @@ export async function sendMessageToAgent(
   const stream = await client.agents.messages.create(agentId, {
     input: text,
     streaming: true
-  });
+  }, {timeout: 300000});
 
   for await (const event of stream) {
     if (event.message_type === "assistant_message") {
