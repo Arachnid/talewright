@@ -10,3 +10,18 @@ kv_namespaces = [
 LETTA_BASE_URL = "https://app.letta.com/v1"
 TELEGRAM_WEBHOOK_PATH = "/telegram/webhook"
 LETTA_TEMPLATE_VERSION = "talewright:latest"
+
+[observability]
+enabled = false
+head_sampling_rate = 1
+
+[observability.logs]
+enabled = true
+head_sampling_rate = 1
+persist = true
+invocation_logs = true
+
+[observability.traces]
+enabled = false
+persist = true
+head_sampling_rate = 1
