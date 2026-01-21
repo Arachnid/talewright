@@ -1,0 +1,23 @@
+{
+  "name": "telegram-letta-bot",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:integration": "vitest run src/__tests__/integration.worker.test.ts"
+  },
+  "dependencies": {
+    "@letta-ai/letta-client": "^1.7.2",
+    "grammy": "^1.39.3"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "^4.20250129.0",
+    "typescript": "^5.5.4",
+    "vitest": "^1.6.0",
+    "wrangler": "^3.80.0"
+  }
+}
