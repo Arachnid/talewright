@@ -79,22 +79,15 @@ export async function createAgentFromTemplate(env: Env, meta: TelegramMeta): Pro
     body: JSON.stringify(body)
   });
 
-  const responseText = await response.text();
-  
   if (!response.ok) {
-    console.error("Letta API request failed", {
-      status: response.status,
-      statusText: response.statusText,
-      body: responseText
-    });
-    throw new Error(`Letta API request failed: ${response.status} ${response.statusText}${responseText ? ` - ${responseText}` : ""}`);
+    const errorText = await response.text().catch(() => "");
+    throw new Error(`Letta API request failed: ${response.status} ${response.statusText}${errorText ? ` - ${errorText}` : ""}`);
   }
 
-  const data = JSON.parse(responseText) as { agent_ids?: string[] };
-  console.log(`Letta template response: ${responseText}`);
-  const agentId = data.agent_ids?.[0];
+  const data = await response.json() as { agents?: Array<{ id?: string }> };
+  const agentId = data.agents?.[0]?.id;
   if (!agentId) {
-    throw new Error("Letta template response did not include agent_ids");
+    throw new Error("Letta template response did not include agents[0].id");
   }
 
   return agentId;

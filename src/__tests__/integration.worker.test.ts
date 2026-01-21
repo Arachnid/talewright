@@ -31,9 +31,7 @@ function startMockServer() {
       state.templateCalls += 1;
       res.writeHead(200, { "Content-Type": "application/json" });
       res.end(JSON.stringify({
-        agent_ids: ["agent-1"],
-        deployment_id: "deployment-1",
-        group_id: null
+        agents: [{ id: "agent-1" }]
       }));
       return;
     }
