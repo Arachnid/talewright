@@ -8,7 +8,7 @@ kv_namespaces = [
 
 [vars]
 TELEGRAM_WEBHOOK_PATH = "/telegram/webhook"
-LETTA_TEMPLATE_VERSION = "pbta-test/talewright:latest"
+LETTA_TEMPLATE_VERSION = "talewright:latest"
 LETTA_PROJECT = "pbta-test"
 
 [observability]
