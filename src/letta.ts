@@ -98,7 +98,7 @@ export async function sendMessageToAgent(
   agentId: string,
   text: string
 ): Promise<string> {
-  const response: LettaResponse = await client.agents.messages.create(agentId, { input: text });
+  const response: LettaResponse = await client.agents.messages.create(agentId, { input: text }, {timeout: 300000});
   const messages: Message[] = response.messages ?? [];
   const assistant = [...messages].reverse().find((message): message is AssistantMessage => {
     return "message_type" in message && message.message_type === "assistant_message";
