@@ -1,4 +1,4 @@
-name = "telegram-letta-bot"
+name = "talewright"
 main = "src/index.ts"
 compatibility_date = "2025-01-29"
 
