@@ -10,7 +10,7 @@ kv_namespaces = [
 LETTA_BASE_URL = "https://app.letta.com/v1"
 TELEGRAM_WEBHOOK_PATH = "/telegram/webhook"
 LETTA_TEMPLATE_VERSION = "talewright:latest"
-LETTA_PROJECT = "default-project"
+LETTA_PROJECT = "pbta-test"
 
 [observability]
 enabled = false
