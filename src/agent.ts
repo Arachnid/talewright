@@ -21,27 +21,10 @@ export async function ensureAgentForChat(env: Env, meta: TelegramMeta): Promise<
 export async function forwardMessageToLetta(
   env: Env,
   meta: TelegramMeta,
-  text: string
-): Promise<string> {
-  console.log("forwardMessageToLetta: starting", { chatId: meta.chatId, textLength: text.length });
-  try {
-    const agentId = await ensureAgentForChat(env, meta);
-    console.log("forwardMessageToLetta: agent obtained", { agentId });
-    const client = createLettaClient(env);
-    const result = await sendMessageToAgent(client, agentId, text);
-    console.log("forwardMessageToLetta: completed successfully", { resultLength: result.length });
-    return result;
-  } catch (error) {
-    console.error("forwardMessageToLetta: error occurred", {
-      error: error instanceof Error ? {
-        name: error.name,
-        message: error.message,
-        stack: error.stack,
-        cause: error.cause
-      } : error,
-      chatId: meta.chatId,
-      textLength: text.length
-    });
-    throw error;
-  }
+  text: string,
+  onPart: (text: string) => Promise<void>
+): Promise<void> {
+  const agentId = await ensureAgentForChat(env, meta);
+  const client = createLettaClient(env);
+  await sendMessageToAgent(client, agentId, text, onPart);
 }

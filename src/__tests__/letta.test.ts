@@ -19,35 +19,43 @@ describe("parseTemplateMemory", () => {
 });
 
 describe("sendMessageToAgent", () => {
-  it("returns assistant content string", async () => {
+  it("calls onPart for assistant content string", async () => {
+    async function* mockStream() {
+      yield { message_type: "assistant_message", content: "Hello there" } as any;
+    }
+    
     const client = {
       agents: {
         messages: {
-          create: async () => ({
-            messages: [{ message_type: "assistant_message", role: "assistant", content: "Hello there" }]
-          })
+          create: async () => mockStream()
         }
       }
     };
 
-    const reply = await sendMessageToAgent(client as any, "agent-1", "Hi");
-    expect(reply).toBe("Hello there");
+    const parts: string[] = [];
+    await sendMessageToAgent(client as any, "agent-1", "Hi", async (part) => {
+      parts.push(part);
+    });
+    expect(parts).toEqual(["Hello there"]);
   });
 
-  it("extracts text from array content", async () => {
+  it("calls onPart for each text part in array content", async () => {
+    async function* mockStream() {
+      yield { message_type: "assistant_message", content: [{ text: "Hello" }, { text: " world" }] } as any;
+    }
+    
     const client = {
       agents: {
         messages: {
-          create: async () => ({
-            messages: [
-              { message_type: "assistant_message", role: "assistant", content: [{ text: "Hello" }, { text: " world" }] }
-            ]
-          })
+          create: async () => mockStream()
         }
       }
     };
 
-    const reply = await sendMessageToAgent(client as any, "agent-1", "Hi");
-    expect(reply).toBe("Hello world");
+    const parts: string[] = [];
+    await sendMessageToAgent(client as any, "agent-1", "Hi", async (part) => {
+      parts.push(part);
+    });
+    expect(parts).toEqual(["Hello", " world"]);
   });
 });

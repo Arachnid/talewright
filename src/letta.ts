@@ -1,8 +1,7 @@
 import { Letta } from "@letta-ai/letta-client";
 import type {
   AssistantMessage,
-  LettaResponse,
-  Message
+  LettaStreamingResponse
 } from "@letta-ai/letta-client/resources/agents/messages";
 import type { Env, TelegramMeta } from "./types";
 
@@ -96,53 +95,36 @@ export async function createAgentFromTemplate(env: Env, meta: TelegramMeta): Pro
 export async function sendMessageToAgent(
   client: Letta,
   agentId: string,
-  text: string
-): Promise<string> {
-  console.log("sendMessageToAgent: starting request", { agentId, textLength: text.length });
-  try {
-    const response: LettaResponse = await client.agents.messages.create(agentId, { input: text }, {timeout: 300000});
-    console.log("sendMessageToAgent: request completed successfully", { messageCount: response.messages?.length ?? 0 });
-    const messages: Message[] = response.messages ?? [];
-  const assistant = [...messages].reverse().find((message): message is AssistantMessage => {
-    return "message_type" in message && message.message_type === "assistant_message";
+  text: string,
+  onPart: (text: string) => Promise<void>
+): Promise<void> {
+  const stream = await client.agents.messages.create(agentId, {
+    input: text,
+    streaming: true
   });
 
-  const content = assistant?.content;
-  if (typeof content === "string") {
-    return content;
-  }
-
-  if (Array.isArray(content)) {
-    return content
-      .map((part) => {
-        if (typeof part === "string") {
-          return part;
+  for await (const event of stream) {
+    if (event.message_type === "assistant_message") {
+      const content = (event as AssistantMessage).content;
+      
+      if (typeof content === "string") {
+        if (content.trim()) {
+          await onPart(content);
         }
-        if (typeof part === "object" && part && "text" in part) {
-          return String((part as { text?: string }).text ?? "");
+      } else if (Array.isArray(content)) {
+        for (const part of content) {
+          if (typeof part === "string") {
+            if (part.trim()) {
+              await onPart(part);
+            }
+          } else if (typeof part === "object" && part && "text" in part) {
+            const textPart = String((part as { text?: string }).text ?? "");
+            if (textPart.trim()) {
+              await onPart(textPart);
+            }
+          }
         }
-        return "";
-      })
-      .join("")
-      .trim();
-  }
-
-  if (content != null) {
-    return String(content);
-  }
-
-  return "";
-  } catch (error) {
-    console.error("sendMessageToAgent: error occurred", {
-      error: error instanceof Error ? {
-        name: error.name,
-        message: error.message,
-        stack: error.stack,
-        cause: error.cause
-      } : error,
-      agentId,
-      textLength: text.length
-    });
-    throw error;
+      }
+    }
   }
 }

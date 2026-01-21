@@ -38,10 +38,25 @@ function startMockServer() {
 
     if (req.method === "POST" && url.pathname.startsWith("/v1/agents/") && url.pathname.endsWith("/messages")) {
       state.messageCalls += 1;
-      res.writeHead(200, { "Content-Type": "application/json" });
-      res.end(JSON.stringify({
-        messages: [{ message_type: "assistant_message", role: "assistant", content: "Hello from Letta" }]
-      }));
+      const parsedBody = body ? JSON.parse(body) : {};
+      if (parsedBody.streaming) {
+        // Streaming response (SSE format) - send multiple parts
+        res.writeHead(200, { 
+          "Content-Type": "text/event-stream",
+          "Cache-Control": "no-cache",
+          "Connection": "keep-alive"
+        });
+        res.write(`data: ${JSON.stringify({ message_type: "assistant_message", content: "Hello" })}\n\n`);
+        res.write(`data: ${JSON.stringify({ message_type: "assistant_message", content: " from" })}\n\n`);
+        res.write(`data: ${JSON.stringify({ message_type: "assistant_message", content: " Letta" })}\n\n`);
+        res.end();
+      } else {
+        // Non-streaming response
+        res.writeHead(200, { "Content-Type": "application/json" });
+        res.end(JSON.stringify({
+          messages: [{ message_type: "assistant_message", role: "assistant", content: "Hello from Letta" }]
+        }));
+      }
       return;
     }
 
@@ -254,10 +269,11 @@ describe("worker integration", () => {
         );
       }
 
-      expect(mock.state.telegramMessages[0]).toEqual({
-        chatId,
-        text: "Hello from Letta"
-      });
+      // Should receive multiple messages for each streaming part
+      expect(mock.state.telegramMessages.length).toBeGreaterThanOrEqual(1);
+      const combinedText = mock.state.telegramMessages.map(m => m.text).join("");
+      expect(combinedText).toContain("Hello");
+      expect(combinedText).toContain("Letta");
     },
     20000
   );
