@@ -23,7 +23,8 @@ Set these as Worker vars or secrets:
 - `TELEGRAM_BOT_TOKEN` (secret)
 - `TELEGRAM_WEBHOOK_SECRET` (optional secret for Telegram’s `X-Telegram-Bot-Api-Secret-Token`)
 - `LETTA_API_KEY` (secret)
-- `LETTA_BASE_URL` (default: `https://app.letta.com/v1`)
+- `LETTA_BASE_URL` (optional, e.g. `https://api.letta.com` or your self-hosted URL)
+- `LETTA_PROJECT` (optional, used with Letta Cloud instead of `LETTA_BASE_URL`)
 - `LETTA_TEMPLATE_VERSION` (format: `template_name:version`)
 - `LETTA_TEMPLATE_MEMORY_JSON` (optional JSON object for template memory variables)
 - `TELEGRAM_WEBHOOK_PATH` (default: `/telegram/webhook`)
@@ -70,3 +71,7 @@ I used `grammy` for minimal boilerplate, but I can switch to Telegraf if you pre
 ## Letta template API
 
 Template agent creation uses `client.templates.agents.create(templateVersion, ...)` from the Letta SDK. Reference: https://github.com/letta-ai/letta-node/blob/main/api.md
+
+## Letta SDK config
+
+You can configure the Letta client with either a `baseURL` (self-hosted or custom) or a `project` for Letta Cloud. Reference: https://docs.letta.com/api-reference/overview#typescript-sdk

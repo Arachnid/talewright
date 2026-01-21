@@ -7,9 +7,16 @@ import type {
 import type { Env, TelegramMeta } from "./types";
 
 export function createLettaClient(env: Env): Letta {
+  if (env.LETTA_BASE_URL) {
+    return new Letta({
+      apiKey: env.LETTA_API_KEY,
+      baseURL: env.LETTA_BASE_URL
+    });
+  }
+
   return new Letta({
     apiKey: env.LETTA_API_KEY,
-    baseURL: env.LETTA_BASE_URL
+    project: env.LETTA_PROJECT
   });
 }
 

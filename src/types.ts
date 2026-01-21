@@ -5,7 +5,8 @@ export interface Env {
   TELEGRAM_WEBHOOK_PATH: string;
   TELEGRAM_WEBHOOK_SECRET?: string;
   LETTA_API_KEY: string;
-  LETTA_BASE_URL: string;
+  LETTA_BASE_URL?: string;
+  LETTA_PROJECT?: string;
   LETTA_TEMPLATE_VERSION: string;
   LETTA_TEMPLATE_MEMORY_JSON?: string;
 }
