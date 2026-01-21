@@ -25,3 +25,6 @@ invocation_logs = true
 enabled = false
 persist = true
 head_sampling_rate = 1
+
+[limits]
+cpu_ms = 300000  # 5 minutes CPU time limit

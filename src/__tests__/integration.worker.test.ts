@@ -61,7 +61,7 @@ function startMockServer() {
 
     if (req.method === "POST" && url.pathname.includes("sendMessage")) {
       const parsed = body ? JSON.parse(body) : {};
-      state.telegramMessages.push({ chatId: parsed.chat_id, text: parsed.text });
+      state.telegramMessages.push({ chatId: Number(parsed.chat_id), text: parsed.text });
       res.writeHead(200, { "Content-Type": "application/json" });
       res.end(JSON.stringify({ ok: true, result: { message_id: 1 } }));
       return;
