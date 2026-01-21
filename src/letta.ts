@@ -91,7 +91,7 @@ export async function createAgentFromTemplate(env: Env, meta: TelegramMeta): Pro
   }
 
   const data = JSON.parse(responseText) as { agent_ids?: string[] };
-  console.log("Letta template response", { body: responseText, parsed: data });
+  console.log(`Letta template response: ${{ body: responseText, parsed: data }}`);
   const agentId = data.agent_ids?.[0];
   if (!agentId) {
     throw new Error("Letta template response did not include agent_ids");
