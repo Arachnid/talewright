@@ -29,3 +29,10 @@ export async function putChatAgent(
 ): Promise<void> {
   await env.CHAT_AGENT_KV.put(chatKey(chatId), JSON.stringify(record));
 }
+
+export async function deleteChatAgent(
+  env: Env,
+  chatId: string
+): Promise<void> {
+  await env.CHAT_AGENT_KV.delete(chatKey(chatId));
+}
