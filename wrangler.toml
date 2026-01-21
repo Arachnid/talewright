@@ -1,6 +1,7 @@
 name = "talewright"
 main = "src/index.ts"
 compatibility_date = "2025-01-29"
+compatibility_flags = ["nodejs_compat"]
 
 kv_namespaces = [
   { binding = "CHAT_AGENT_KV", id = "3731c1b3f93c498ca0460f7bc9335c2d" }

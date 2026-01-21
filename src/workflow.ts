@@ -1,6 +1,6 @@
 import { WorkflowEntrypoint, WorkflowEvent, WorkflowStep } from "cloudflare:workers";
 import { Bot } from "grammy";
-import { sanitizeMarkdown } from "./markdown-sanitizer";
+import telegramifyMarkdown from "telegramify-markdown";
 import type { Env, TelegramWorkflowInput, TelegramMeta } from "./types";
 import { createFreshAgent, forwardMessageToLetta } from "./agent";
 
@@ -57,7 +57,7 @@ export class TelegramWorkflow extends WorkflowEntrypoint<Env, TelegramWorkflowIn
 
 async function sendTelegramMessage(bot: Bot, chatId: string, text: string): Promise<void> {
   try {
-    const sanitized = sanitizeMarkdown(text);
+    const sanitized = telegramifyMarkdown(text, "escape").trim();
     await bot.api.sendMessage(chatId, sanitized, {parse_mode: "MarkdownV2"});
   } catch (error) {
     console.error("Failed to send Telegram message", {
