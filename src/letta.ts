@@ -98,8 +98,11 @@ export async function sendMessageToAgent(
   agentId: string,
   text: string
 ): Promise<string> {
-  const response: LettaResponse = await client.agents.messages.create(agentId, { input: text }, {timeout: 300000});
-  const messages: Message[] = response.messages ?? [];
+  console.log("sendMessageToAgent: starting request", { agentId, textLength: text.length });
+  try {
+    const response: LettaResponse = await client.agents.messages.create(agentId, { input: text }, {timeout: 300000});
+    console.log("sendMessageToAgent: request completed successfully", { messageCount: response.messages?.length ?? 0 });
+    const messages: Message[] = response.messages ?? [];
   const assistant = [...messages].reverse().find((message): message is AssistantMessage => {
     return "message_type" in message && message.message_type === "assistant_message";
   });
@@ -129,4 +132,17 @@ export async function sendMessageToAgent(
   }
 
   return "";
+  } catch (error) {
+    console.error("sendMessageToAgent: error occurred", {
+      error: error instanceof Error ? {
+        name: error.name,
+        message: error.message,
+        stack: error.stack,
+        cause: error.cause
+      } : error,
+      agentId,
+      textLength: text.length
+    });
+    throw error;
+  }
 }
