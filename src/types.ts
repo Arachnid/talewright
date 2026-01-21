@@ -9,6 +9,9 @@ export interface Env {
   LETTA_PROJECT?: string;
   LETTA_TEMPLATE_VERSION: string;
   LETTA_TEMPLATE_MEMORY_JSON?: string;
+  TELEGRAM_WORKFLOW: {
+    create(options: { id?: string; params: TelegramWorkflowInput }): Promise<{ id: string }>;
+  };
 }
 
 export interface ChatAgentRecord {
@@ -21,4 +24,11 @@ export interface TelegramMeta {
   chatId: string;
   userId?: string;
   username?: string;
+}
+
+export interface TelegramWorkflowInput {
+  chatId: string;
+  userId?: string;
+  username?: string;
+  text: string;
 }

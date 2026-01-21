@@ -26,7 +26,11 @@ describe("ensureAgentForChat", () => {
   it("reuses an existing agent id", async () => {
     const env = {
       CHAT_AGENT_KV: new MockKV(),
-      LETTA_TEMPLATE_VERSION: "testproject/testtemplate:1"
+      LETTA_TEMPLATE_VERSION: "testproject/testtemplate:1",
+      TELEGRAM_BOT_TOKEN: "test-token",
+      TELEGRAM_WEBHOOK_PATH: "/webhook",
+      LETTA_API_KEY: "test-key",
+      TELEGRAM_WORKFLOW: { create: async () => ({ id: "test" }) }
     } as Env;
 
     await env.CHAT_AGENT_KV.put("chat:123", JSON.stringify({
@@ -42,7 +46,11 @@ describe("ensureAgentForChat", () => {
   it("creates and stores a new agent id", async () => {
     const env = {
       CHAT_AGENT_KV: new MockKV(),
-      LETTA_TEMPLATE_VERSION: "testproject/testtemplate:1"
+      LETTA_TEMPLATE_VERSION: "testproject/testtemplate:1",
+      TELEGRAM_BOT_TOKEN: "test-token",
+      TELEGRAM_WEBHOOK_PATH: "/webhook",
+      LETTA_API_KEY: "test-key",
+      TELEGRAM_WORKFLOW: { create: async () => ({ id: "test" }) }
     } as Env;
 
     const agentId = await ensureAgentForChat(env, { chatId: "456" });

@@ -118,9 +118,12 @@ export async function sendMessageToAgent(
               await onPart(part);
             }
           } else if (typeof part === "object" && part && "text" in part) {
-            const textPart = String((part as { text?: string }).text ?? "");
-            if (textPart.trim()) {
-              await onPart(textPart);
+            const textValue = (part as { text?: string }).text;
+            if (textValue != null) {
+              const textPart = String(textValue);
+              if (textPart.trim()) {
+                await onPart(textPart);
+              }
             }
           }
         }

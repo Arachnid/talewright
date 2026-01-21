@@ -28,3 +28,8 @@ head_sampling_rate = 1
 
 [limits]
 cpu_ms = 300000  # 5 minutes CPU time limit
+
+[[workflows]]
+name = "telegram-workflow"
+binding = "TELEGRAM_WORKFLOW"
+class_name = "TelegramWorkflow"
