@@ -180,20 +180,17 @@ export async function sendMessageToAgent(
       if (event.message_type === "approval_request_message") {
         sawApprovalRequest = true;
         const toolCalls = extractToolCalls(event);
-        const readyToolCalls = collectExecutableToolCalls(
-          toolCalls,
-          pendingToolCalls,
-          executedToolCalls
-        );
-        for (const toolCall of readyToolCalls) {
-          approvals.push(await executeToolCall(toolCall, options.onToolCall));
-        }
+        collectPendingToolCalls(toolCalls, pendingToolCalls);
       }
     }
 
     if (!sawApprovalRequest) {
       break;
     }
+
+    approvals.push(
+      ...(await buildApprovalsFromPending(pendingToolCalls, executedToolCalls, options.onToolCall))
+    );
 
     stream = await client.agents.messages.create(agentId, {
       messages: [{ type: "approval", approvals }],
@@ -227,13 +224,10 @@ function extractToolCalls(event: LettaStreamingResponse): Array<ToolCall | ToolC
   return toolCalls;
 }
 
-function collectExecutableToolCalls(
+function collectPendingToolCalls(
   toolCalls: Array<ToolCall | ToolCallDelta>,
-  pendingToolCalls: Map<string, PendingToolCall>,
-  executedToolCalls: Set<string>
-): ToolCall[] {
-  const ready: ToolCall[] = [];
-
+  pendingToolCalls: Map<string, PendingToolCall>
+): void {
   for (const toolCall of toolCalls) {
     const toolCallId = toolCall.tool_call_id ?? null;
     if (!toolCallId) {
@@ -242,19 +236,7 @@ function collectExecutableToolCalls(
 
     const merged = mergeToolCall(toolCallId, pendingToolCalls.get(toolCallId), toolCall);
     pendingToolCalls.set(toolCallId, merged);
-
-    if (merged.name && merged.arguments && !executedToolCalls.has(toolCallId)) {
-      executedToolCalls.add(toolCallId);
-      pendingToolCalls.delete(toolCallId);
-      ready.push({
-        tool_call_id: toolCallId,
-        name: merged.name,
-        arguments: merged.arguments
-      });
-    }
   }
-
-  return ready;
 }
 
 function mergeToolCall(
@@ -262,11 +244,50 @@ function mergeToolCall(
   pending: PendingToolCall | undefined,
   delta: ToolCall | ToolCallDelta
 ): PendingToolCall {
+  const argumentsValue =
+    delta.arguments != null
+      ? `${pending?.arguments ?? ""}${delta.arguments}`
+      : pending?.arguments;
   return {
     tool_call_id: toolCallId,
     name: delta.name ?? pending?.name,
-    arguments: delta.arguments ?? pending?.arguments
+    arguments: argumentsValue
   };
+}
+
+async function buildApprovalsFromPending(
+  pendingToolCalls: Map<string, PendingToolCall>,
+  executedToolCalls: Set<string>,
+  handler?: (toolCall: ToolCall) => Promise<ToolReturn>
+): Promise<ToolReturn[]> {
+  const approvals: ToolReturn[] = [];
+
+  for (const pending of pendingToolCalls.values()) {
+    if (executedToolCalls.has(pending.tool_call_id)) {
+      continue;
+    }
+
+    if (!pending.name || !pending.arguments) {
+      approvals.push({
+        status: "error",
+        tool_call_id: pending.tool_call_id,
+        tool_return: "Tool call missing required fields.",
+        type: "tool"
+      });
+      executedToolCalls.add(pending.tool_call_id);
+      continue;
+    }
+
+    approvals.push(await executeToolCall({
+      tool_call_id: pending.tool_call_id,
+      name: pending.name,
+      arguments: pending.arguments
+    }, handler));
+    executedToolCalls.add(pending.tool_call_id);
+  }
+
+  pendingToolCalls.clear();
+  return approvals;
 }
 
 async function executeToolCall(

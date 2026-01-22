@@ -93,7 +93,13 @@ describe("sendMessageToAgent", () => {
       } as LettaStreamingResponse, {
         message_type: "approval_request_message",
         tool_call: {
-          arguments: JSON.stringify({ title: "Roadmap" }),
+          arguments: "{\"title\":\"Road",
+          tool_call_id: "call-2"
+        }
+      } as LettaStreamingResponse, {
+        message_type: "approval_request_message",
+        tool_call: {
+          arguments: "map\"}",
           tool_call_id: "call-2"
         }
       } as LettaStreamingResponse]))
@@ -129,7 +135,7 @@ describe("sendMessageToAgent", () => {
     expect(onToolCall).toHaveBeenCalledTimes(1);
     expect(onToolCall).toHaveBeenCalledWith(expect.objectContaining({
       name: "editForumTopic",
-      arguments: JSON.stringify({ title: "Roadmap" }),
+      arguments: "{\"title\":\"Roadmap\"}",
       tool_call_id: "call-2"
     }));
   });
