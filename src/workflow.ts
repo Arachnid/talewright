@@ -115,10 +115,15 @@ function createTelegramToolHandler(
     try {
       args = toolCall.arguments ? JSON.parse(toolCall.arguments) : undefined;
     } catch (error) {
+      console.error("Failed to parse editForumTopic arguments", {
+        error,
+        toolCall
+      });
+      const message = error instanceof Error ? error.message : String(error);
       return {
         status: "error",
         tool_call_id: toolCallId,
-        tool_return: "Invalid tool arguments: expected JSON object."
+        tool_return: `Invalid tool arguments: ${message}`
       };
     }
 
@@ -128,7 +133,7 @@ function createTelegramToolHandler(
       return {
         status: "error",
         tool_call_id: toolCallId,
-        tool_return: "At least one of title or emojiId is required."
+        tool_return: "Invalid arguments: at least one of title or emojiId is required."
       };
     }
 
@@ -136,7 +141,7 @@ function createTelegramToolHandler(
       return {
         status: "error",
         tool_call_id: toolCallId,
-        tool_return: "This chat has no forum topic to edit."
+        tool_return: "Invalid context: this chat has no forum topic to edit."
       };
     }
 
@@ -145,7 +150,7 @@ function createTelegramToolHandler(
       return {
         status: "error",
         tool_call_id: toolCallId,
-        tool_return: "Invalid forum topic thread id."
+        tool_return: `Invalid forum topic thread id: ${messageThreadId}`
       };
     }
 
@@ -165,6 +170,13 @@ function createTelegramToolHandler(
         tool_return: "Updated forum topic."
       };
     } catch (error) {
+      console.error("Failed to edit forum topic", {
+        error,
+        toolCall,
+        chatId,
+        threadId,
+        update
+      });
       const message = error instanceof Error ? error.message : String(error);
       return {
         status: "error",

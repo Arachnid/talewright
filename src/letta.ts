@@ -289,6 +289,10 @@ async function executeToolCall(
       ...result
     };
   } catch (error) {
+    console.error("Client-side tool execution failed", {
+      error,
+      toolCall
+    });
     const message = error instanceof Error ? error.message : String(error);
     return {
       status: "error",
