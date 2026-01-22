@@ -58,9 +58,9 @@ export class TelegramWorkflow extends WorkflowEntrypoint<Env, TelegramWorkflowIn
           }
         };
 
-        await forwardMessageToLetta(this.env, meta, text, async (messageId: string, token: string) => {
+        await forwardMessageToLetta(this.env, meta, text, async (lettaMessageId: string, token: string) => {
           if (currentLettaMessageId !== messageId) {
-            currentLettaMessageId = messageId;
+            currentLettaMessageId = lettaMessageId;
             draftText = "";
             lastUpdateAt = 0;
             messageId = undefined;
