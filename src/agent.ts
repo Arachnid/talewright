@@ -3,13 +3,13 @@ import { createAgentFromTemplate, createLettaClient, sendMessageToAgent } from "
 import { deleteChatAgent, getChatAgent, putChatAgent } from "./kv";
 
 export async function ensureAgentForChat(env: Env, meta: TelegramMeta): Promise<string> {
-  const existing = await getChatAgent(env, meta.chatId);
+  const existing = await getChatAgent(env, meta.chatId, meta.messageThreadId);
   if (existing?.agentId) {
     return existing.agentId;
   }
 
   const agentId = await createAgentFromTemplate(env, meta);
-  await putChatAgent(env, meta.chatId, {
+  await putChatAgent(env, meta.chatId, meta.messageThreadId, {
     agentId,
     createdAt: new Date().toISOString(),
     templateVersion: env.LETTA_TEMPLATE_VERSION
@@ -20,11 +20,11 @@ export async function ensureAgentForChat(env: Env, meta: TelegramMeta): Promise<
 
 export async function createFreshAgent(env: Env, meta: TelegramMeta): Promise<string> {
   // Delete existing agent if it exists
-  await deleteChatAgent(env, meta.chatId);
+  await deleteChatAgent(env, meta.chatId, meta.messageThreadId);
   
   // Create a new agent
   const agentId = await createAgentFromTemplate(env, meta);
-  await putChatAgent(env, meta.chatId, {
+  await putChatAgent(env, meta.chatId, meta.messageThreadId, {
     agentId,
     createdAt: new Date().toISOString(),
     templateVersion: env.LETTA_TEMPLATE_VERSION

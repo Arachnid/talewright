@@ -9,10 +9,11 @@ export class TelegramWorkflow extends WorkflowEntrypoint<Env, TelegramWorkflowIn
     event: WorkflowEvent<TelegramWorkflowInput>,
     step: WorkflowStep
   ): Promise<void> {
-    const { chatId, userId, username, text } = event.payload;
+    const { chatId, messageThreadId, userId, username, text } = event.payload;
     
     const meta: TelegramMeta = {
       chatId,
+      ...(messageThreadId ? { messageThreadId } : {}),
       userId,
       username
     };
@@ -33,11 +34,21 @@ export class TelegramWorkflow extends WorkflowEntrypoint<Env, TelegramWorkflowIn
         await step.do("create-fresh-agent", async () => {
           await createFreshAgent(this.env, meta);
         });
-        await sendTelegramMessage(bot, chatId, "Agent restarted! Ready for a fresh conversation.");
+        await sendTelegramMessage(
+          bot,
+          chatId,
+          "Agent restarted! Ready for a fresh conversation.",
+          messageThreadId
+        );
         return;
       } catch (error) {
         console.error("Error creating fresh agent", error);
-        await sendTelegramMessage(bot, chatId, "Sorry, something went wrong while restarting the agent.");
+        await sendTelegramMessage(
+          bot,
+          chatId,
+          "Sorry, something went wrong while restarting the agent.",
+          messageThreadId
+        );
         return;
       }
     }
@@ -45,20 +56,36 @@ export class TelegramWorkflow extends WorkflowEntrypoint<Env, TelegramWorkflowIn
     try {
       await step.do("process-letta-message", async () => {
         await forwardMessageToLetta(this.env, meta, text, async (part: string) => {
-          await sendTelegramMessage(bot, chatId, part);
+          await sendTelegramMessage(bot, chatId, part, messageThreadId);
         });
       });
     } catch (error) {
       console.error("Letta error in workflow", error);
-      await sendTelegramMessage(bot, chatId, "Sorry, something went wrong on my side.");
+      await sendTelegramMessage(
+        bot,
+        chatId,
+        "Sorry, something went wrong on my side.",
+        messageThreadId
+      );
     }
   }
 }
 
-async function sendTelegramMessage(bot: Bot, chatId: string, text: string): Promise<void> {
+async function sendTelegramMessage(
+  bot: Bot,
+  chatId: string,
+  text: string,
+  messageThreadId?: string
+): Promise<void> {
   try {
     const sanitized = telegramifyMarkdown(text, "escape").trim();
-    await bot.api.sendMessage(chatId, sanitized, {parse_mode: "MarkdownV2"});
+    const options: { parse_mode: "MarkdownV2"; message_thread_id?: number } = {
+      parse_mode: "MarkdownV2"
+    };
+    if (messageThreadId) {
+      options.message_thread_id = Number(messageThreadId);
+    }
+    await bot.api.sendMessage(chatId, sanitized, options);
   } catch (error) {
     console.error("Failed to send Telegram message", {
       error,

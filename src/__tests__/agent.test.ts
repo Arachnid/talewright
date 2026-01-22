@@ -39,7 +39,7 @@ describe("ensureAgentForChat", () => {
       TELEGRAM_WORKFLOW: { create: async () => ({ id: "test" }) }
     } as Env;
 
-    await env.CHAT_AGENT_KV.put("chat:123", JSON.stringify({
+    await env.CHAT_AGENT_KV.put("chat:123:main", JSON.stringify({
       agentId: "agent-existing",
       createdAt: "2025-01-01T00:00:00.000Z",
       templateVersion: "template:1"
@@ -62,7 +62,7 @@ describe("ensureAgentForChat", () => {
     const agentId = await ensureAgentForChat(env, { chatId: "456" });
     expect(agentId).toBe("agent-created");
 
-    const raw = await env.CHAT_AGENT_KV.get("chat:456");
+    const raw = await env.CHAT_AGENT_KV.get("chat:456:main");
     expect(raw).toContain("agent-created");
   });
 });
@@ -81,7 +81,7 @@ describe("createFreshAgent", () => {
     } as Env;
 
     // Set up an existing agent
-    await env.CHAT_AGENT_KV.put("chat:789", JSON.stringify({
+    await env.CHAT_AGENT_KV.put("chat:789:main", JSON.stringify({
       agentId: "agent-old",
       createdAt: "2025-01-01T00:00:00.000Z",
       templateVersion: "template:1"
@@ -94,7 +94,7 @@ describe("createFreshAgent", () => {
     expect(vi.mocked(deleteAgent)).toHaveBeenCalledWith(env, "agent-old");
 
     // Verify the old agent was deleted and a new one was created
-    const raw = await env.CHAT_AGENT_KV.get("chat:789");
+    const raw = await env.CHAT_AGENT_KV.get("chat:789:main");
     expect(raw).not.toContain("agent-old");
     expect(raw).toContain("agent-created");
   });
@@ -112,7 +112,7 @@ describe("createFreshAgent", () => {
     const agentId = await createFreshAgent(env, { chatId: "999" });
     expect(agentId).toBe("agent-created");
 
-    const raw = await env.CHAT_AGENT_KV.get("chat:999");
+    const raw = await env.CHAT_AGENT_KV.get("chat:999:main");
     expect(raw).toContain("agent-created");
   });
 });
@@ -135,7 +135,7 @@ describe("deleteChatAgent", () => {
     } as Env;
 
     // Set up an existing agent
-    await env.CHAT_AGENT_KV.put("chat:111", JSON.stringify({
+    await env.CHAT_AGENT_KV.put("chat:111:main", JSON.stringify({
       agentId: "agent-to-delete",
       createdAt: "2025-01-01T00:00:00.000Z",
       templateVersion: "template:1"
@@ -147,7 +147,7 @@ describe("deleteChatAgent", () => {
     expect(vi.mocked(deleteAgent)).toHaveBeenCalledWith(env, "agent-to-delete");
     
     // Verify KV record was deleted
-    const raw = await env.CHAT_AGENT_KV.get("chat:111");
+    const raw = await env.CHAT_AGENT_KV.get("chat:111:main");
     expect(raw).toBeNull();
   });
 
@@ -165,7 +165,7 @@ describe("deleteChatAgent", () => {
     } as Env;
 
     // Set up an existing agent
-    await env.CHAT_AGENT_KV.put("chat:222", JSON.stringify({
+    await env.CHAT_AGENT_KV.put("chat:222:main", JSON.stringify({
       agentId: "agent-to-delete",
       createdAt: "2025-01-01T00:00:00.000Z",
       templateVersion: "template:1"
@@ -175,7 +175,7 @@ describe("deleteChatAgent", () => {
     await deleteChatAgent(env, "222");
 
     // Verify KV record was still deleted
-    const raw = await env.CHAT_AGENT_KV.get("chat:222");
+    const raw = await env.CHAT_AGENT_KV.get("chat:222:main");
     expect(raw).toBeNull();
   });
 
@@ -197,7 +197,7 @@ describe("deleteChatAgent", () => {
     expect(vi.mocked(deleteAgent)).not.toHaveBeenCalled();
     
     // Verify KV record doesn't exist (no error thrown)
-    const raw = await env.CHAT_AGENT_KV.get("chat:333");
+    const raw = await env.CHAT_AGENT_KV.get("chat:333:main");
     expect(raw).toBeNull();
   });
 });

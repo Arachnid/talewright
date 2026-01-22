@@ -22,12 +22,14 @@ export interface ChatAgentRecord {
 
 export interface TelegramMeta {
   chatId: string;
+  messageThreadId?: string;
   userId?: string;
   username?: string;
 }
 
 export interface TelegramWorkflowInput {
   chatId: string;
+  messageThreadId?: string;
   userId?: string;
   username?: string;
   text: string;
