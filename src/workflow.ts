@@ -34,17 +34,34 @@ export class TelegramWorkflow extends WorkflowEntrypoint<Env, TelegramWorkflowIn
         let lastUpdateAt = 0;
         let messageId: number | undefined;
         let currentLettaMessageId: string | undefined;
+        let pendingFlush: ReturnType<typeof setTimeout> | undefined;
         const clientTools: LettaRequest.ClientTool[] = [editForumTopicTool];
         const toolHandler = createTelegramToolHandler(bot, chatId, messageThreadId);
 
+        const clearPendingFlush = () => {
+          if (pendingFlush) {
+            clearTimeout(pendingFlush);
+            pendingFlush = undefined;
+          }
+        };
+
         const updateDraft = async (force: boolean) => {
           if (!draftText) {
+            clearPendingFlush();
             return;
           }
           const now = Date.now();
           if (!force && messageId && now - lastUpdateAt < 1000) {
+            if (!pendingFlush) {
+              const delay = Math.max(1000 - (now - lastUpdateAt), 0);
+              pendingFlush = setTimeout(() => {
+                pendingFlush = undefined;
+                void updateDraft(true);
+              }, delay);
+            }
             return;
           }
+          clearPendingFlush();
           const nextMessageId = await sendMessageDraft(
             bot,
             chatId,
@@ -74,6 +91,7 @@ export class TelegramWorkflow extends WorkflowEntrypoint<Env, TelegramWorkflowIn
         });
 
         await updateDraft(true);
+        clearPendingFlush();
       });
     } catch (error) {
       console.error("Letta error in workflow", error);
