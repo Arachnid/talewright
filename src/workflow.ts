@@ -33,6 +33,7 @@ export class TelegramWorkflow extends WorkflowEntrypoint<Env, TelegramWorkflowIn
         let draftText = "";
         let lastUpdateAt = 0;
         let messageId: number | undefined;
+        let currentLettaMessageId: string | undefined;
         const clientTools: LettaRequest.ClientTool[] = [editForumTopicTool];
         const toolHandler = createTelegramToolHandler(bot, chatId, messageThreadId);
 
@@ -52,18 +53,25 @@ export class TelegramWorkflow extends WorkflowEntrypoint<Env, TelegramWorkflowIn
             messageId
           );
           if (nextMessageId != null) {
-            messageId = nextMessageId;``
+            messageId = nextMessageId;
             lastUpdateAt = now;
           }
         };
 
-        await forwardMessageToLetta(this.env, meta, text, async (token: string) => {
+        await forwardMessageToLetta(this.env, meta, text, async (messageId: string, token: string) => {
+          if (currentLettaMessageId !== messageId) {
+            currentLettaMessageId = messageId;
+            draftText = "";
+            lastUpdateAt = 0;
+            messageId = undefined;
+          }
           draftText += token;
           await updateDraft(false);
         }, {
           clientTools,
           onToolCall: toolHandler
         });
+
         await updateDraft(true);
       });
     } catch (error) {

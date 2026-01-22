@@ -35,7 +35,7 @@ export async function forwardMessageToLetta(
   env: Env,
   meta: TelegramMeta,
   text: string,
-  onPart: (text: string) => Promise<void>,
+  onPart: (messageId: string, text: string) => Promise<void>,
   options?: SendMessageOptions
 ): Promise<void> {
   const agentId = await ensureAgentForChat(env, meta);

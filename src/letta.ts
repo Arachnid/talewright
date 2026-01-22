@@ -133,7 +133,7 @@ export async function sendMessageToAgent(
   client: Letta,
   agentId: string,
   text: string,
-  onToken: (text: string) => Promise<void>,
+  onToken: (messageId: string, text: string) => Promise<void>,
   options: SendMessageOptions = {}
 ): Promise<void> {
   const pendingToolCalls = new Map<string, PendingToolCall>();
@@ -152,24 +152,25 @@ export async function sendMessageToAgent(
 
     for await (const event of stream) {
       if (event.message_type === "assistant_message") {
+        const messageId = (event as AssistantMessage).id ?? "unknown";
         const content = (event as AssistantMessage).content;
 
         if (typeof content === "string") {
           if (content.length > 0) {
-            await onToken(content);
+            await onToken(messageId, content);
           }
         } else if (Array.isArray(content)) {
           for (const part of content) {
             if (typeof part === "string") {
               if ((part as string).length > 0) {
-                await onToken(part as string);
+                await onToken(messageId, part as string);
               }
             } else if (part && typeof part === "object" && "text" in part) {
               const textValue = (part as { text?: string }).text;
               if (textValue != null) {
                 const textPart = String(textValue);
                 if (textPart.length > 0) {
-                  await onToken(textPart);
+                  await onToken(messageId, textPart);
                 }
               }
             }

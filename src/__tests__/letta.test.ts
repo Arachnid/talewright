@@ -160,7 +160,7 @@ describe("parseTemplateMemory", () => {
 describe("sendMessageToAgent", () => {
   it("calls onPart for assistant content string", async () => {
     async function* mockStream() {
-      yield { message_type: "assistant_message", content: "Hello there" } as any;
+      yield { message_type: "assistant_message", id: "msg-1", content: "Hello there" } as any;
     }
     
     const client = {
@@ -172,7 +172,7 @@ describe("sendMessageToAgent", () => {
     };
 
     const parts: string[] = [];
-    await sendMessageToAgent(client as any, "agent-1", "Hi", async (part) => {
+    await sendMessageToAgent(client as any, "agent-1", "Hi", async (_messageId, part) => {
       parts.push(part);
     });
     expect(parts).toEqual(["Hello there"]);
@@ -180,7 +180,7 @@ describe("sendMessageToAgent", () => {
 
   it("calls onPart for each text part in array content", async () => {
     async function* mockStream() {
-      yield { message_type: "assistant_message", content: [{ text: "Hello" }, { text: " world" }] } as any;
+      yield { message_type: "assistant_message", id: "msg-1", content: [{ text: "Hello" }, { text: " world" }] } as any;
     }
     
     const client = {
@@ -192,7 +192,7 @@ describe("sendMessageToAgent", () => {
     };
 
     const parts: string[] = [];
-    await sendMessageToAgent(client as any, "agent-1", "Hi", async (part) => {
+    await sendMessageToAgent(client as any, "agent-1", "Hi", async (_messageId, part) => {
       parts.push(part);
     });
     expect(parts).toEqual(["Hello", " world"]);
