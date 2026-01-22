@@ -3,6 +3,7 @@ import { Bot } from "grammy";
 import telegramifyMarkdown from "telegramify-markdown";
 import type { Env, TelegramWorkflowInput, TelegramMeta } from "./types";
 import { forwardMessageToLetta } from "./agent";
+import type { LettaRequest, ToolCall, ToolReturn } from "@letta-ai/letta-client/resources/agents/messages";
 
 export class TelegramWorkflow extends WorkflowEntrypoint<Env, TelegramWorkflowInput> {
   async run(
@@ -32,6 +33,8 @@ export class TelegramWorkflow extends WorkflowEntrypoint<Env, TelegramWorkflowIn
         let draftText = "";
         let lastUpdateAt = 0;
         let messageId: number | undefined;
+        const clientTools: LettaRequest.ClientTool[] = [editForumTopicTool];
+        const toolHandler = createTelegramToolHandler(bot, chatId, messageThreadId);
 
         const updateDraft = async (force: boolean) => {
           if (!draftText) {
@@ -49,7 +52,7 @@ export class TelegramWorkflow extends WorkflowEntrypoint<Env, TelegramWorkflowIn
             messageId
           );
           if (nextMessageId != null) {
-            messageId = nextMessageId;
+            messageId = nextMessageId;``
             lastUpdateAt = now;
           }
         };
@@ -57,6 +60,9 @@ export class TelegramWorkflow extends WorkflowEntrypoint<Env, TelegramWorkflowIn
         await forwardMessageToLetta(this.env, meta, text, async (token: string) => {
           draftText += token;
           await updateDraft(false);
+        }, {
+          clientTools,
+          onToolCall: toolHandler
         });
         await updateDraft(true);
       });
@@ -70,6 +76,103 @@ export class TelegramWorkflow extends WorkflowEntrypoint<Env, TelegramWorkflowIn
       );
     }
   }
+}
+
+const editForumTopicTool: LettaRequest.ClientTool = {
+  name: "editForumTopic",
+  description: "Edit the current Telegram forum topic title and icon.",
+  parameters: {
+    type: "object",
+    properties: {
+      title: {
+        type: "string",
+        description: "New forum topic title"
+      },
+      emojiId: {
+        type: "string",
+        description: "Custom emoji ID for the topic icon"
+      }
+    }
+  }
+};
+
+function createTelegramToolHandler(
+  bot: Bot,
+  chatId: string,
+  messageThreadId?: string
+): (toolCall: ToolCall) => Promise<ToolReturn> {
+  return async (toolCall: ToolCall) => {
+    const toolCallId = toolCall.tool_call_id ?? "unknown";
+    if (toolCall.name !== "editForumTopic") {
+      return {
+        status: "error",
+        tool_call_id: toolCallId,
+        tool_return: `Unsupported tool: ${toolCall.name ?? "unknown"}`
+      };
+    }
+
+    let args: { title?: string; emojiId?: string } | undefined;
+    try {
+      args = toolCall.arguments ? JSON.parse(toolCall.arguments) : undefined;
+    } catch (error) {
+      return {
+        status: "error",
+        tool_call_id: toolCallId,
+        tool_return: "Invalid tool arguments: expected JSON object."
+      };
+    }
+
+    const title = typeof args?.title === "string" ? args.title.trim() : "";
+    const emojiId = typeof args?.emojiId === "string" ? args.emojiId.trim() : "";
+    if (!title && !emojiId) {
+      return {
+        status: "error",
+        tool_call_id: toolCallId,
+        tool_return: "At least one of title or emojiId is required."
+      };
+    }
+
+    if (!messageThreadId) {
+      return {
+        status: "error",
+        tool_call_id: toolCallId,
+        tool_return: "This chat has no forum topic to edit."
+      };
+    }
+
+    const threadId = Number(messageThreadId);
+    if (Number.isNaN(threadId)) {
+      return {
+        status: "error",
+        tool_call_id: toolCallId,
+        tool_return: "Invalid forum topic thread id."
+      };
+    }
+
+    const update: { name?: string; icon_custom_emoji_id?: string } = {};
+    if (title) {
+      update.name = title;
+    }
+    if (emojiId) {
+      update.icon_custom_emoji_id = emojiId;
+    }
+
+    try {
+      await bot.api.editForumTopic(chatId, threadId, update);
+      return {
+        status: "success",
+        tool_call_id: toolCallId,
+        tool_return: "Updated forum topic."
+      };
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      return {
+        status: "error",
+        tool_call_id: toolCallId,
+        tool_return: `Failed to edit forum topic: ${message}`
+      };
+    }
+  };
 }
 
 async function sendTelegramMessage(

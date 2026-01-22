@@ -1,5 +1,10 @@
 import type { Env, TelegramMeta } from "./types";
-import { createAgentFromTemplate, createLettaClient, sendMessageToAgent } from "./letta";
+import {
+  createAgentFromTemplate,
+  createLettaClient,
+  sendMessageToAgent,
+  type SendMessageOptions
+} from "./letta";
 import { getChatAgent, putChatAgent } from "./kv";
 
 export async function ensureAgentForChat(env: Env, meta: TelegramMeta): Promise<string> {
@@ -30,9 +35,10 @@ export async function forwardMessageToLetta(
   env: Env,
   meta: TelegramMeta,
   text: string,
-  onPart: (text: string) => Promise<void>
+  onPart: (text: string) => Promise<void>,
+  options?: SendMessageOptions
 ): Promise<void> {
   const agentId = await ensureAgentForChat(env, meta);
   const client = createLettaClient(env);
-  await sendMessageToAgent(client, agentId, text, onPart);
+  await sendMessageToAgent(client, agentId, text, onPart, options);
 }

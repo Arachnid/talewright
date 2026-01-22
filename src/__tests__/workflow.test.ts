@@ -93,7 +93,11 @@ describe("TelegramWorkflow", () => {
         username: "testuser"
       },
       "Hello, how are you?",
-      expect.any(Function)
+      expect.any(Function),
+      expect.objectContaining({
+        clientTools: expect.any(Array),
+        onToolCall: expect.any(Function)
+      })
     );
   });
 
@@ -114,7 +118,11 @@ describe("TelegramWorkflow", () => {
         username: "testuser"
       },
       "/start",
-      expect.any(Function)
+      expect.any(Function),
+      expect.objectContaining({
+        clientTools: expect.any(Array),
+        onToolCall: expect.any(Function)
+      })
     );
   });
 });
