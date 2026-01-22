@@ -29,9 +29,36 @@ export class TelegramWorkflow extends WorkflowEntrypoint<Env, TelegramWorkflowIn
 
     try {
       await step.do("process-letta-message", async () => {
-        await forwardMessageToLetta(this.env, meta, text, async (part: string) => {
-          await sendTelegramMessage(bot, chatId, part, messageThreadId);
+        let draftText = "";
+        let lastUpdateAt = 0;
+        let messageId: number | undefined;
+
+        const updateDraft = async (force: boolean) => {
+          if (!draftText) {
+            return;
+          }
+          const now = Date.now();
+          if (!force && messageId && now - lastUpdateAt < 1000) {
+            return;
+          }
+          const nextMessageId = await sendMessageDraft(
+            bot,
+            chatId,
+            draftText,
+            messageThreadId,
+            messageId
+          );
+          if (nextMessageId != null) {
+            messageId = nextMessageId;
+            lastUpdateAt = now;
+          }
+        };
+
+        await forwardMessageToLetta(this.env, meta, text, async (token: string) => {
+          draftText += token;
+          await updateDraft(false);
         });
+        await updateDraft(true);
       });
     } catch (error) {
       console.error("Letta error in workflow", error);
@@ -65,5 +92,41 @@ async function sendTelegramMessage(
       error,
       chatId
     });
+  }
+}
+
+async function sendMessageDraft(
+  bot: Bot,
+  chatId: string,
+  text: string,
+  messageThreadId?: string,
+  messageId?: number
+): Promise<number | undefined> {
+  const sanitized = telegramifyMarkdown(text, "escape");
+  if (!sanitized.trim()) {
+    return messageId;
+  }
+
+  const options: { parse_mode: "MarkdownV2"; message_thread_id?: number } = {
+    parse_mode: "MarkdownV2"
+  };
+  if (messageThreadId) {
+    options.message_thread_id = Number(messageThreadId);
+  }
+
+  try {
+    if (messageId == null) {
+      const response = await bot.api.sendMessage(chatId, sanitized, options);
+      return response.message_id;
+    }
+
+    await bot.api.editMessageText(chatId, messageId, sanitized, options);
+    return messageId;
+  } catch (error) {
+    console.error("Failed to send Telegram message draft", {
+      error,
+      chatId
+    });
+    return messageId;
   }
 }

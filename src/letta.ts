@@ -124,11 +124,12 @@ export async function sendMessageToAgent(
   client: Letta,
   agentId: string,
   text: string,
-  onPart: (text: string) => Promise<void>
+  onToken: (text: string) => Promise<void>
 ): Promise<void> {
   const stream = await client.agents.messages.create(agentId, {
     input: text,
-    streaming: true
+    streaming: true,
+    stream_tokens: true
   }, {timeout: 300000});
 
   for await (const event of stream) {
@@ -136,21 +137,21 @@ export async function sendMessageToAgent(
       const content = (event as AssistantMessage).content;
       
       if (typeof content === "string") {
-        if (content.trim()) {
-          await onPart(content);
+        if (content.length > 0) {
+          await onToken(content);
         }
       } else if (Array.isArray(content)) {
         for (const part of content) {
           if (typeof part === "string") {
-            if ((part as string).trim()) {
-              await onPart(part as string);
+            if ((part as string).length > 0) {
+              await onToken(part as string);
             }
           } else if (part && typeof part === "object" && "text" in part) {
             const textValue = (part as { text?: string }).text;
             if (textValue != null) {
               const textPart = String(textValue);
-              if (textPart.trim()) {
-                await onPart(textPart);
+              if (textPart.length > 0) {
+                await onToken(textPart);
               }
             }
           }

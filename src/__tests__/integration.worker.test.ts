@@ -6,7 +6,7 @@ import type { AddressInfo } from "node:net";
 type MockState = {
   templateCalls: number;
   messageCalls: number;
-  telegramMessages: Array<{ chatId: number; text: string }>;
+  telegramMessages: Array<{ chatId: number; text: string; messageId: number }>;
   requests: Array<{ method: string; path: string }>;
 };
 
@@ -83,15 +83,32 @@ function startMockServer() {
 
     if (req.method === "POST" && url.pathname.includes("sendMessage")) {
       const parsed = body ? JSON.parse(body) : {};
-      state.telegramMessages.push({ chatId: Number(parsed.chat_id), text: parsed.text });
+      const messageId = state.telegramMessages.length + 1;
+      state.telegramMessages.push({
+        chatId: Number(parsed.chat_id),
+        text: parsed.text,
+        messageId
+      });
       res.writeHead(200, { "Content-Type": "application/json" });
-      res.end(JSON.stringify({ ok: true, result: { message_id: 1 } }));
+      res.end(JSON.stringify({ ok: true, result: { message_id: messageId } }));
       return;
     }
 
     if (req.method === "POST" && url.pathname.includes("sendChatAction")) {
       res.writeHead(200, { "Content-Type": "application/json" });
       res.end(JSON.stringify({ ok: true, result: true }));
+      return;
+    }
+
+    if (req.method === "POST" && url.pathname.includes("editMessageText")) {
+      const parsed = body ? JSON.parse(body) : {};
+      const targetId = Number(parsed.message_id);
+      const existing = state.telegramMessages.find(msg => msg.messageId === targetId);
+      if (existing) {
+        existing.text = parsed.text;
+      }
+      res.writeHead(200, { "Content-Type": "application/json" });
+      res.end(JSON.stringify({ ok: true, result: { message_id: targetId } }));
       return;
     }
 

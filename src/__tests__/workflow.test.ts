@@ -14,7 +14,8 @@ vi.mock("cloudflare:workers", () => ({
 }));
 
 // Create a shared mock for sendMessage that we can spy on
-const mockSendMessage = vi.fn().mockResolvedValue(undefined);
+const mockSendMessage = vi.fn().mockResolvedValue({ message_id: 1 });
+const mockEditMessageText = vi.fn().mockResolvedValue({ message_id: 1 });
 
 // Mock dependencies
 vi.mock("../agent", () => ({
@@ -24,7 +25,8 @@ vi.mock("../agent", () => ({
 vi.mock("grammy", () => ({
   Bot: vi.fn().mockImplementation(() => ({
     api: {
-      sendMessage: mockSendMessage
+      sendMessage: mockSendMessage,
+      editMessageText: mockEditMessageText
     }
   }))
 }));
