@@ -5,7 +5,7 @@ import type { Env, TelegramWorkflowInput } from "../types";
 vi.mock("cloudflare:workers", () => ({
   WorkflowEntrypoint: class MockWorkflowEntrypoint {
     env: Env;
-    constructor(env: Env) {
+    constructor(_ctx: unknown, env: Env) {
       this.env = env;
     }
   },
@@ -18,7 +18,6 @@ const mockSendMessage = vi.fn().mockResolvedValue(undefined);
 
 // Mock dependencies
 vi.mock("../agent", () => ({
-  createFreshAgent: vi.fn(),
   forwardMessageToLetta: vi.fn()
 }));
 
@@ -71,94 +70,11 @@ describe("TelegramWorkflow", () => {
     };
   });
 
-  it("handles /start command by creating fresh agent", async () => {
-    const { createFreshAgent } = await import("../agent");
-    vi.mocked(createFreshAgent).mockResolvedValue("new-agent-id");
-
-    const workflow = new TelegramWorkflow(mockEnv);
-    mockEvent.payload.text = "/start";
-
-    await workflow.run(mockEvent as any, mockStep as any);
-
-    expect(mockStep.do).toHaveBeenCalledWith(
-      "create-fresh-agent",
-      expect.any(Function)
-    );
-    expect(createFreshAgent).toHaveBeenCalledWith(mockEnv, {
-      chatId: "123",
-      userId: "456",
-      username: "testuser"
-    });
-    expect(mockSendMessage).toHaveBeenCalledWith(
-      "123",
-      expect.stringContaining("Agent restarted"),
-      { parse_mode: "MarkdownV2" }
-    );
-  });
-
-  it("handles /restart command by creating fresh agent", async () => {
-    const { createFreshAgent } = await import("../agent");
-    vi.mocked(createFreshAgent).mockResolvedValue("new-agent-id");
-
-    const workflow = new TelegramWorkflow(mockEnv);
-    mockEvent.payload.text = "/restart";
-
-    await workflow.run(mockEvent as any, mockStep as any);
-
-    expect(mockStep.do).toHaveBeenCalledWith(
-      "create-fresh-agent",
-      expect.any(Function)
-    );
-    expect(createFreshAgent).toHaveBeenCalledWith(mockEnv, {
-      chatId: "123",
-      userId: "456",
-      username: "testuser"
-    });
-    expect(mockSendMessage).toHaveBeenCalledWith(
-      "123",
-      expect.stringContaining("Agent restarted"),
-      { parse_mode: "MarkdownV2" }
-    );
-  });
-
-  it("handles /start command with whitespace", async () => {
-    const { createFreshAgent } = await import("../agent");
-    vi.mocked(createFreshAgent).mockResolvedValue("new-agent-id");
-
-    const workflow = new TelegramWorkflow(mockEnv);
-    mockEvent.payload.text = "  /start  ";
-
-    await workflow.run(mockEvent as any, mockStep as any);
-
-    expect(createFreshAgent).toHaveBeenCalled();
-    expect(mockSendMessage).toHaveBeenCalledWith(
-      "123",
-      expect.stringContaining("Agent restarted"),
-      { parse_mode: "MarkdownV2" }
-    );
-  });
-
-  it("sends error message if creating fresh agent fails", async () => {
-    const { createFreshAgent } = await import("../agent");
-    vi.mocked(createFreshAgent).mockRejectedValue(new Error("Failed to create agent"));
-
-    const workflow = new TelegramWorkflow(mockEnv);
-    mockEvent.payload.text = "/start";
-
-    await workflow.run(mockEvent as any, mockStep as any);
-
-    expect(mockSendMessage).toHaveBeenCalledWith(
-      "123",
-      "Sorry, something went wrong while restarting the agent\\.",
-      { parse_mode: "MarkdownV2" }
-    );
-  });
-
   it("forwards non-command messages to Letta", async () => {
     const { forwardMessageToLetta } = await import("../agent");
     vi.mocked(forwardMessageToLetta).mockResolvedValue(undefined);
 
-    const workflow = new TelegramWorkflow(mockEnv);
+    const workflow = new TelegramWorkflow({} as any, mockEnv as any);
     mockEvent.payload.text = "Hello, how are you?";
 
     await workflow.run(mockEvent as any, mockStep as any);
@@ -179,16 +95,24 @@ describe("TelegramWorkflow", () => {
     );
   });
 
-  it("does not treat /start as command when it's part of a longer message", async () => {
-    const { forwardMessageToLetta, createFreshAgent } = await import("../agent");
+  it("forwards /start text to Letta when invoked directly", async () => {
+    const { forwardMessageToLetta } = await import("../agent");
     vi.mocked(forwardMessageToLetta).mockResolvedValue(undefined);
 
-    const workflow = new TelegramWorkflow(mockEnv);
-    mockEvent.payload.text = "Please /start the process";
+    const workflow = new TelegramWorkflow({} as any, mockEnv as any);
+    mockEvent.payload.text = "/start";
 
     await workflow.run(mockEvent as any, mockStep as any);
 
-    expect(forwardMessageToLetta).toHaveBeenCalled();
-    expect(vi.mocked(createFreshAgent)).not.toHaveBeenCalled();
+    expect(forwardMessageToLetta).toHaveBeenCalledWith(
+      mockEnv,
+      {
+        chatId: "123",
+        userId: "456",
+        username: "testuser"
+      },
+      "/start",
+      expect.any(Function)
+    );
   });
 });

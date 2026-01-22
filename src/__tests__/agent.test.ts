@@ -1,5 +1,5 @@
 import { describe, expect, it, vi, beforeEach } from "vitest";
-import { createFreshAgent, ensureAgentForChat } from "../agent";
+import { ensureAgentForChat, getOrCreateAgent } from "../agent";
 import { deleteChatAgent } from "../kv";
 import type { Env } from "../types";
 
@@ -67,10 +67,8 @@ describe("ensureAgentForChat", () => {
   });
 });
 
-describe("createFreshAgent", () => {
-  it("deletes existing agent and creates a new one", async () => {
-    const { deleteAgent } = await import("../letta");
-    
+describe("getOrCreateAgent", () => {
+  it("returns created false for an existing agent", async () => {
     const env = {
       CHAT_AGENT_KV: new MockKV(),
       LETTA_TEMPLATE_VERSION: "testproject/testtemplate:1",
@@ -80,26 +78,17 @@ describe("createFreshAgent", () => {
       TELEGRAM_WORKFLOW: { create: async () => ({ id: "test" }) }
     } as Env;
 
-    // Set up an existing agent
     await env.CHAT_AGENT_KV.put("chat:789:main", JSON.stringify({
       agentId: "agent-old",
       createdAt: "2025-01-01T00:00:00.000Z",
       templateVersion: "template:1"
     }));
 
-    const agentId = await createFreshAgent(env, { chatId: "789" });
-    expect(agentId).toBe("agent-created");
-
-    // Verify the old agent was deleted from Letta API
-    expect(vi.mocked(deleteAgent)).toHaveBeenCalledWith(env, "agent-old");
-
-    // Verify the old agent was deleted and a new one was created
-    const raw = await env.CHAT_AGENT_KV.get("chat:789:main");
-    expect(raw).not.toContain("agent-old");
-    expect(raw).toContain("agent-created");
+    const result = await getOrCreateAgent(env, { chatId: "789" });
+    expect(result).toEqual({ agentId: "agent-old", created: false });
   });
 
-  it("creates a new agent even when none exists", async () => {
+  it("creates and stores a new agent when missing", async () => {
     const env = {
       CHAT_AGENT_KV: new MockKV(),
       LETTA_TEMPLATE_VERSION: "testproject/testtemplate:1",
@@ -109,8 +98,8 @@ describe("createFreshAgent", () => {
       TELEGRAM_WORKFLOW: { create: async () => ({ id: "test" }) }
     } as Env;
 
-    const agentId = await createFreshAgent(env, { chatId: "999" });
-    expect(agentId).toBe("agent-created");
+    const result = await getOrCreateAgent(env, { chatId: "999" });
+    expect(result).toEqual({ agentId: "agent-created", created: true });
 
     const raw = await env.CHAT_AGENT_KV.get("chat:999:main");
     expect(raw).toContain("agent-created");

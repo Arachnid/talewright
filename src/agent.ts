@@ -1,11 +1,19 @@
 import type { Env, TelegramMeta } from "./types";
 import { createAgentFromTemplate, createLettaClient, sendMessageToAgent } from "./letta";
-import { deleteChatAgent, getChatAgent, putChatAgent } from "./kv";
+import { getChatAgent, putChatAgent } from "./kv";
 
 export async function ensureAgentForChat(env: Env, meta: TelegramMeta): Promise<string> {
+  const { agentId } = await getOrCreateAgent(env, meta);
+  return agentId;
+}
+
+export async function getOrCreateAgent(
+  env: Env,
+  meta: TelegramMeta
+): Promise<{ agentId: string; created: boolean }> {
   const existing = await getChatAgent(env, meta.chatId, meta.messageThreadId);
   if (existing?.agentId) {
-    return existing.agentId;
+    return { agentId: existing.agentId, created: false };
   }
 
   const agentId = await createAgentFromTemplate(env, meta);
@@ -15,22 +23,7 @@ export async function ensureAgentForChat(env: Env, meta: TelegramMeta): Promise<
     templateVersion: env.LETTA_TEMPLATE_VERSION
   });
 
-  return agentId;
-}
-
-export async function createFreshAgent(env: Env, meta: TelegramMeta): Promise<string> {
-  // Delete existing agent if it exists
-  await deleteChatAgent(env, meta.chatId, meta.messageThreadId);
-  
-  // Create a new agent
-  const agentId = await createAgentFromTemplate(env, meta);
-  await putChatAgent(env, meta.chatId, meta.messageThreadId, {
-    agentId,
-    createdAt: new Date().toISOString(),
-    templateVersion: env.LETTA_TEMPLATE_VERSION
-  });
-
-  return agentId;
+  return { agentId, created: true };
 }
 
 export async function forwardMessageToLetta(

@@ -89,6 +89,12 @@ function startMockServer() {
       return;
     }
 
+    if (req.method === "POST" && url.pathname.includes("sendChatAction")) {
+      res.writeHead(200, { "Content-Type": "application/json" });
+      res.end(JSON.stringify({ ok: true, result: true }));
+      return;
+    }
+
     res.writeHead(404);
     res.end();
   });

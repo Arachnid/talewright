@@ -2,7 +2,7 @@ import { WorkflowEntrypoint, WorkflowEvent, WorkflowStep } from "cloudflare:work
 import { Bot } from "grammy";
 import telegramifyMarkdown from "telegramify-markdown";
 import type { Env, TelegramWorkflowInput, TelegramMeta } from "./types";
-import { createFreshAgent, forwardMessageToLetta } from "./agent";
+import { forwardMessageToLetta } from "./agent";
 
 export class TelegramWorkflow extends WorkflowEntrypoint<Env, TelegramWorkflowInput> {
   async run(
@@ -26,32 +26,6 @@ export class TelegramWorkflow extends WorkflowEntrypoint<Env, TelegramWorkflowIn
           }
         : undefined
     });
-
-    // Handle /start and /restart commands
-    const trimmedText = text.trim();
-    if (trimmedText === "/start" || trimmedText === "/restart") {
-      try {
-        await step.do("create-fresh-agent", async () => {
-          await createFreshAgent(this.env, meta);
-        });
-        await sendTelegramMessage(
-          bot,
-          chatId,
-          "Agent restarted! Ready for a fresh conversation.",
-          messageThreadId
-        );
-        return;
-      } catch (error) {
-        console.error("Error creating fresh agent", error);
-        await sendTelegramMessage(
-          bot,
-          chatId,
-          "Sorry, something went wrong while restarting the agent.",
-          messageThreadId
-        );
-        return;
-      }
-    }
 
     try {
       await step.do("process-letta-message", async () => {
